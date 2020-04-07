@@ -66,26 +66,20 @@ write.csv (pts.info2,  "./outputs/BC_400m_GridPts.csv", row.names = FALSE)
 
 #### OPTIONAL overlay points over BGC 
 BGC <- st_read("D:/CommonTables/BGC_maps/BGCv11.shp") %>% st_geometry(BGC)# %>%  as(., "Spatial")  #st_buffer(., dist=50) %>%
-BGC$BGC <- as.factor(BGC$BGC)
-#BGC <- readOGR(dsn = "D:/CommonTables/BGC_maps", layer = "BGCv11")#
-#BGC <- spTransform(BGC, CRS.WGS84)
-#BGC2 <- as(BGC, "SpatialPolygons")
-BGC_raster <- fasterize(sf::st_as_sf(BGC), bc_DEM)#,  fun = "first"
-projectRaster(BGC_raster, crs=crs(CRS.WGS84))
-# tahoe_burned <- gdal_rasterize(src_dataset,dst_filename,
-#                                b=c(1,2,3),
-#                                burn=c(0,255,0),
-#                                l="tahoe_highrez_training",
-#                                verbose=TRUE,
-#                                output_Raster=TRUE)
+BGC$BGC <- as.character(BGC$BGC)
+pnt_BGC <- over(BGC[,"BGC"], pts.info2 ,   minDimension = 1, returnList = FALSE) # very slow
 
+###raster extract might be faster but need to figure our raster with factor membership
 
-latlon <- coords %>% dplyr::select(longitude, latitude)
-pnt_BGC <- raster::extract(BGC_raster, latlon)#, [,"BGC"],  minDimension = 1, returnList = FALSE)
-pts.info2 <- cbind(pts.info2,pnt_BGC)
-pnt_BGC <- as_tibble(rownames_to_column(pnt_BGC, var = "ID1"))
-pts.info <- left_join(pnt_BGC, coords,  by = "ID1")
-pts.info <- pts.info %>% drop_na(BGC)
+#BGC_raster <- fasterize(sf::st_as_sf(BGC), bc_DEM)#,  fun = "first"
+#projectRaster(BGC_raster, crs=crs(CRS.WGS84))
+#latlon <- coords %>% dplyr::select(longitude, latitude)
+#pnt_BGC <- raster::extract(BGC_raster, latlon)#, [,"BGC"],  minDimension = 1, returnList = FALSE)
+#pts.info2 <- cbind(pts.info2,pnt_BGC)
+
+# pnt_BGC <- as_tibble(rownames_to_column(pnt_BGC, var = "ID1"))
+# pts.info <- left_join(pnt_BGC, coords,  by = "ID1")
+# pts.info <- pts.info %>% drop_na(BGC)
 
 
 
@@ -160,3 +154,9 @@ write.csv (pts.info2,  "./outputs/BC_BGC_400m_GridPts.csv", row.names = FALSE) #
 # write.csv (pts.info2,  "./outputs/USA_800m_HexPts_State.csv", row.names = FALSE) ### this file to be submitted to ClimateWNA
 
 
+# tahoe_burned <- gdal_rasterize(src_dataset,dst_filename,
+#                                b=c(1,2,3),
+#                                burn=c(0,255,0),
+#                                l="tahoe_highrez_training",
+#                                verbose=TRUE,
+#                                output_Raster=TRUE)
