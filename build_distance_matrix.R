@@ -20,9 +20,16 @@ library(parallel)
 
 #### read in bgc data
 #input data should be in multipolygon form
-bgc_data = st_read("USA_SubZoneMap_800m_4_May_2020_dissolved_multi.gpkg") %>%
-  arrange(., BGC)
+bgc_data = st_read("USA_SubZoneMap_800m_4_May_2020_dissolved_multi.gpkg") %>%    
+  arrange(., BGC) %>%
+  filter(., BGC != "")
 
+#custom projection
+bgc_proj = "+proj=lcc +lat_1=42 +lat_2=52 +lat_0=47 +lon_0=-139 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+
+#transform input data to custom projection
+bgc_data = bgc_data %>%
+  st_transform(., bgc_proj)
 
 ###############################################################################
 #### calculate distance matrix
@@ -61,15 +68,23 @@ flextable(two_tables_into_one) %>%
   theme_box() %>%
   bold(., bold=TRUE, j="BGC")
 
-#### export result tables as csv (no formatting)
+#### export result tables as csv (no formatting)    ##undo select/filter changes to csv outputs, do this in data read-in stage instead
 # distance and bearing matrix
-write.csv(two_tables_into_one, "distance_and_bearing_matrix.csv")
+two_tables_into_one %>%
+  column_to_rownames(., "BGC") %>%
+  write.csv(., "distance_and_bearing_matrix.csv")
 
 #distance matrix
-write.csv(dist_matrix, "distance_matrix.csv")
+dist_matrix %>%
+  set_rownames(bgc_data$BGC) %>%
+  set_colnames(bgc_data$BGC) %>%
+  write.csv(., "distance_matrix.csv")
 
 #bearing matrix
-write.csv(bearing_matrix, "bearing_matrix.csv")
+bearing_matrix %>%
+  set_rownames(bgc_data$BGC) %>%
+  set_colnames(bgc_data$BGC) %>%
+  write.csv(., "bearing_matrix.csv")
 
 
 
